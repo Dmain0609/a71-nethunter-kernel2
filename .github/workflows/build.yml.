@@ -1,0 +1,23 @@
+name: Build kernel
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-15 gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi bc bison flex libssl-dev libelf-dev cpio python3
+      - name: Clone source
+        run: git clone --depth 1 -b android-4.14 https://github.com/pascua28/android_kernel_samsung_sm7150.git src
+      - name: Build
+        working-directory: src
+        run: |
+          OPTS="O=out ARCH=arm64 CC=clang-15 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CLANG_TRIPLE=aarch64-linux-gnu-"
+          make $OPTS a71_defconfig
+          make $OPTS -j$(nproc)
+      - name: Save kernel image
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-image
+          path: src/out/arch/arm64/boot/Image*
